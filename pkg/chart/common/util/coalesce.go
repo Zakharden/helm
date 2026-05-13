@@ -341,6 +341,10 @@ func coalesceTablesFullKey(printf printFn, dst, src map[string]any, prefix strin
 			// value, the user is nullifying a chart default - remove the key.
 			// But if src also has nil (or key not in src), preserve the nil
 			delete(dst, key)
+		} else if ok && dv == nil {
+			// A nil destination value is an explicit override. Keep it even when
+			// the chart default is a table, which happens while coalescing values
+			// for a dependency chart.
 		} else if !ok {
 			dst[key] = val
 		} else if istable(val) {

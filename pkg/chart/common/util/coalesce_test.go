@@ -727,6 +727,56 @@ func TestCoalesceValuesWarnings(t *testing.T) {
 
 }
 
+func TestCoalesceValuesSubchartNullOverrideNoWarning(t *testing.T) {
+	is := assert.New(t)
+
+	resources := map[string]any{
+		"limits": map[string]any{
+			"cpu":    "100m",
+			"memory": "128Mi",
+		},
+		"requests": map[string]any{
+			"cpu":    "100m",
+			"memory": "128Mi",
+		},
+	}
+
+	c := withDeps(
+		&chart.Chart{
+			Metadata: &chart.Metadata{Name: "parent-chart"},
+			Values: map[string]any{
+				"resources":   resources,
+				"child-chart": map[string]any{"resources": resources},
+			},
+		},
+		&chart.Chart{
+			Metadata: &chart.Metadata{Name: "child-chart"},
+			Values:   map[string]any{"resources": resources},
+		},
+	)
+
+	vals := map[string]any{
+		"resources": nil,
+		"child-chart": map[string]any{
+			"resources": nil,
+		},
+	}
+
+	warnings := make([]string, 0)
+	printf := func(format string, v ...any) {
+		warnings = append(warnings, fmt.Sprintf(format, v...))
+	}
+
+	got, err := coalesce(printf, c, vals, "", false)
+	is.NoError(err)
+	is.Empty(warnings)
+
+	childVals, ok := got["child-chart"].(map[string]any)
+	is.True(ok)
+	is.NotContains(childVals, "resources")
+	is.NotContains(got, "resources")
+}
+
 func TestConcatPrefix(t *testing.T) {
 	assert.Equal(t, "b", concatPrefix("", "b"))
 	assert.Equal(t, "a.b", concatPrefix("a", "b"))
