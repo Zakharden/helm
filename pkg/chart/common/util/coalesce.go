@@ -345,6 +345,7 @@ func coalesceTablesFullKey(printf printFn, dst, src map[string]any, prefix strin
 			// A nil destination value is an explicit override. Keep it even when
 			// the chart default is a table, which happens while coalescing values
 			// for a dependency chart.
+			continue
 		} else if !ok {
 			dst[key] = val
 		} else if istable(val) {
